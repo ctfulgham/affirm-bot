@@ -1,0 +1,25 @@
+name: Smoke Test (Inline Python)
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Send inline Python message
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python - << 'PY'
+          import os, json, urllib.request, datetime
+          url = os.environ["DISCORD_WEBHOOK_URL"]
+          msg = f"Smoke OK: {datetime.datetime.utcnow().isoformat()}Z"
+          req = urllib.request.Request(url, data=json.dumps({"content": msg}).encode(),
+                                       headers={"Content-Type":"application/json"})
+          print("Posting to Discord…")
+          print(urllib.request.urlopen(req).read().decode()[:200])
+          PY
