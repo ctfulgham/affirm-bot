@@ -1,0 +1,24 @@
+name: Debug Affirmation Bot
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show repo tree
+        run: |
+          pwd
+          ls -la
+          [ -f affirmations.txt ] && head -n 5 affirmations.txt || echo "No affirmations.txt"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run bot once
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python send_affirmation.py
