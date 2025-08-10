@@ -1,0 +1,34 @@
+name: Daily Affirmation (Inline)
+on:
+  schedule:
+    - cron: "30 12 * * *"   # 7:30 AM America/Chicago during DST
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Pick a line and send to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ ! -f affirmations.txt ]; then
+            echo "::error::affirmations.txt missing at repo root"
+            exit 1
+          fi
+          AFFIRM="$(shuf -n 1 affirmations.txt)"
+          JSON="$(python - <<'PY'
+import os, json, datetime
+aff = os.environ.get("AFFIRM","(missing)")
+today = datetime.datetime.now().strftime("%a %b %d")
+msg = f"🧡 **{today}**\n{aff}\n\nTry a 4–7–8 breath: inhale 4, hold 7, exhale 8."
+print(json.dumps({"content": msg}))
+PY
+)"
+          curl -sS -X POST -H "Content-Type: application/json" -d "$JSON" "$DISCORD_WEBHOOK_URL"
